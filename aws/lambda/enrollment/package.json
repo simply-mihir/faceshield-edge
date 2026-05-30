@@ -1,0 +1,16 @@
+{
+  "name": "faceshield-enrollment-lambda",
+  "version": "1.0.0",
+  "description": "FaceShield Edge — Enrollment Sync Lambda",
+  "main": "index.js",
+  "private": true,
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.540.0",
+    "@aws-sdk/util-dynamodb": "^3.540.0",
+    "@aws-sdk/client-s3": "^3.540.0",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

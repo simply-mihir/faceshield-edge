@@ -1,0 +1,110 @@
+name: FaceShield Edge CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── TypeScript type check + lint ──────────────────────────────
+  lint-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npm run type-check
+
+      - name: ESLint
+        run: npm run lint
+
+  # ── Unit tests ────────────────────────────────────────────────
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test -- --coverage --passWithNoTests
+
+  # ── AWS Lambda validation ─────────────────────────────────────
+  validate-lambda:
+    name: Validate AWS Lambda
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Lambda attendance deps
+        working-directory: aws/lambda/attendance
+        run: npm init -y && npm install @aws-sdk/client-dynamodb @aws-sdk/util-dynamodb jsonwebtoken
+
+      - name: Install Lambda enrollment deps
+        working-directory: aws/lambda/enrollment
+        run: npm init -y && npm install @aws-sdk/client-dynamodb @aws-sdk/util-dynamodb @aws-sdk/client-s3 jsonwebtoken
+
+      - name: Syntax check Lambda functions
+        run: |
+          node --check aws/lambda/attendance/index.js
+          node --check aws/lambda/enrollment/index.js
+
+  # ── Android build check (on PR only) ─────────────────────────
+  android-build:
+    name: Android Build Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create model placeholders (CI only)
+        run: |
+          mkdir -p assets/models
+          echo "PLACEHOLDER" > assets/models/blazeface_int8.tflite
+          echo "PLACEHOLDER" > assets/models/face_mesh_int8.tflite
+          echo "PLACEHOLDER" > assets/models/mobilefacenet_india_int8.tflite
+
+      - name: Gradle build (assembleDebug)
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+        env:
+          JAVA_OPTS: "-Xmx4g"

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+
+    <!-- ── App Identity ──────────────────────────────────────── -->
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleDisplayName</key>
+    <string>FaceShield Edge</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+
+    <!-- ── Camera Permission (REQUIRED by VisionCamera) ─────── -->
+    <key>NSCameraUsageDescription</key>
+    <string>FaceShield Edge uses the front camera to verify your identity via facial recognition and liveness detection. No images are stored — only encrypted mathematical embeddings.</string>
+
+    <!-- ── Microphone (required by VisionCamera, even if unused) -->
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Microphone access is required by the camera framework. FaceShield Edge does not record audio.</string>
+
+    <!-- ── Face ID (future Secure Enclave integration) ──────── -->
+    <key>NSFaceIDUsageDescription</key>
+    <string>FaceShield Edge may use Face ID for additional security on supported devices.</string>
+
+    <!-- ── Network (AWS sync when connectivity returns) ─────── -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+    </dict>
+
+    <!-- ── React Native ──────────────────────────────────────── -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string></string>
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>arm64</string>
+        <string>front-facing-camera</string>
+    </array>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <false/>
+
+    <!-- ── Minimum iOS version (spec: iOS 12+) ──────────────── -->
+    <key>MinimumOSVersion</key>
+    <string>12.0</string>
+
+</dict>
+</plist>

@@ -1,0 +1,144 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: FaceShield Edge — AWS Backend (SAM)
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 30
+    MemorySize: 256
+    Environment:
+      Variables:
+        AWS_REGION: !Ref AWS::Region
+        ATTENDANCE_TABLE: !Ref AttendanceTable
+        EMPLOYEE_TABLE: !Ref EmployeeTable
+        AUDIT_BUCKET: !Ref AuditBucket
+        JWT_SECRET: !Sub '{{resolve:secretsmanager:faceshield/jwt_secret}}'
+        DEVICE_SECRET: !Sub '{{resolve:secretsmanager:faceshield/device_secret}}'
+
+# ── API Gateway ────────────────────────────────────────────────
+Resources:
+  FaceShieldApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: FaceShieldEdgeApi
+      StageName: prod
+      Auth:
+        DefaultAuthorizer: NONE  # JWT validated inside Lambda
+      Cors:
+        AllowMethods: "'POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+
+  # ── Lambdas ──────────────────────────────────────────────────
+  AttendanceSyncFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: faceshield-attendance-sync
+      CodeUri: lambda/attendance/
+      Handler: index.handler
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref AttendanceTable
+      Events:
+        AttendanceSync:
+          Type: Api
+          Properties:
+            RestApiId: !Ref FaceShieldApi
+            Path: /attendance/sync
+            Method: POST
+
+  EnrollmentSyncFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: faceshield-enrollment-sync
+      CodeUri: lambda/enrollment/
+      Handler: index.handler
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref EmployeeTable
+        - S3WritePolicy:
+            BucketName: !Ref AuditBucket
+      Events:
+        EnrollmentSync:
+          Type: Api
+          Properties:
+            RestApiId: !Ref FaceShieldApi
+            Path: /enrollment/sync
+            Method: POST
+
+  # ── DynamoDB Tables ──────────────────────────────────────────
+  AttendanceTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: attendance_records
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: employeeId
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: employeeId
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  EmployeeTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: employee_embeddings
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: employeeId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: employeeId
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  SyncAuditTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: sync_audit_log
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: deviceId
+          AttributeType: S
+        - AttributeName: syncTimestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: deviceId
+          KeyType: HASH
+        - AttributeName: syncTimestamp
+          KeyType: RANGE
+
+  # ── S3 Audit Bucket ──────────────────────────────────────────
+  AuditBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'faceshield-audit-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+Outputs:
+  ApiEndpoint:
+    Description: FaceShield Edge API endpoint (set this in AdminConfig → AWS API Endpoint)
+    Value: !Sub 'https://${FaceShieldApi}.execute-api.${AWS::Region}.amazonaws.com/prod'
+  AttendanceTableName:
+    Value: !Ref AttendanceTable
+  EmployeeTableName:
+    Value: !Ref EmployeeTable
