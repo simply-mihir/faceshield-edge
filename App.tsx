@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
-import {createStackNavigator} from '@react-navigation/stack';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 
 import {PermissionsScreen} from './src/screens/PermissionsScreen';
@@ -23,7 +23,7 @@ export type RootStackParamList = {
   AttendanceSuccess: {similarityScore: number};
 };
 
-const Stack = createStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 // Boot the background sync service on app start
 SyncService.getInstance().startListening();

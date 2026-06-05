@@ -1,79 +1,67 @@
-#!/usr/bin/env bash
-# ─────────────────────────────────────────────────────────────────────────────
-# FaceShield Edge — TFLite Model Download Script
-#
-# Downloads the two public MediaPipe models (BlazeFace + Face Mesh) into
-# assets/models/. The MobileFaceNet model must be trained separately (see
-# docs/MODEL_SETUP.md) or replaced with the base model for development.
-#
-# Usage:
-#   chmod +x scripts/download_models.sh
-#   ./scripts/download_models.sh
-#
-# Requires: curl (pre-installed on macOS/Linux)
-# ─────────────────────────────────────────────────────────────────────────────
-set -e
+#!/bin/bash
+# FaceShield Edge — Model Download Script
+# Downloads all three TFLite models required for on-device inference.
 
+set -e
 MODELS_DIR="$(dirname "$0")/../assets/models"
 mkdir -p "$MODELS_DIR"
 
-echo "📦 FaceShield Edge — Model Downloader"
-echo "Target: $MODELS_DIR"
+echo "=== FaceShield Edge — Model Download ==="
+echo "Target directory: $MODELS_DIR"
 echo ""
 
-# ── 1. BlazeFace (short range, frontal — 0.5 MB) ─────────────────────────────
-BLAZEFACE_URL="https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite"
-BLAZEFACE_OUT="$MODELS_DIR/blazeface_int8.tflite"
+# ── 1. BlazeFace ──────────────────────────────────────────────
+BLAZEFACE_URL="https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite"
+BLAZEFACE_DEST="$MODELS_DIR/blazeface_int8.tflite"
 
-if [ -f "$BLAZEFACE_OUT" ]; then
-  echo "✅ blazeface_int8.tflite already exists — skipping"
+if [ -f "$BLAZEFACE_DEST" ] && [ "$(wc -c < "$BLAZEFACE_DEST")" -gt 10000 ]; then
+  echo "✅ BlazeFace already downloaded ($(du -sh "$BLAZEFACE_DEST" | cut -f1))"
 else
-  echo "⬇️  Downloading BlazeFace..."
-  curl -L --progress-bar "$BLAZEFACE_URL" -o "$BLAZEFACE_OUT"
-  echo "✅ blazeface_int8.tflite downloaded ($(du -sh "$BLAZEFACE_OUT" | cut -f1))"
+  echo "Downloading BlazeFace..."
+  curl -sL "$BLAZEFACE_URL" -o "$BLAZEFACE_DEST" --progress-bar || \
+  wget -q --show-progress "$BLAZEFACE_URL" -O "$BLAZEFACE_DEST"
+  echo "✅ BlazeFace: $(du -sh "$BLAZEFACE_DEST" | cut -f1)"
 fi
 
-# ── 2. Face Mesh / Landmarker (468 landmarks — ~4 MB) ─────────────────────────
-FACEMESH_URL="https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
-FACEMESH_OUT="$MODELS_DIR/face_mesh_int8.tflite"
+# ── 2. MediaPipe Face Mesh ────────────────────────────────────
+FACEMESH_URL="https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task"
+FACEMESH_DEST="$MODELS_DIR/face_mesh_int8.tflite"
 
-if [ -f "$FACEMESH_OUT" ]; then
-  echo "✅ face_mesh_int8.tflite already exists — skipping"
+if [ -f "$FACEMESH_DEST" ] && [ "$(wc -c < "$FACEMESH_DEST")" -gt 100000 ]; then
+  echo "✅ Face Mesh already downloaded ($(du -sh "$FACEMESH_DEST" | cut -f1))"
 else
-  echo "⬇️  Downloading Face Mesh Landmarker..."
-  curl -L --progress-bar "$FACEMESH_URL" -o "$FACEMESH_OUT"
-  echo "✅ face_mesh_int8.tflite downloaded ($(du -sh "$FACEMESH_OUT" | cut -f1))"
+  echo "Downloading MediaPipe Face Landmarker..."
+  curl -sL "$FACEMESH_URL" -o "$FACEMESH_DEST" --progress-bar || \
+  wget -q --show-progress "$FACEMESH_URL" -O "$FACEMESH_DEST"
+  echo "✅ Face Mesh: $(du -sh "$FACEMESH_DEST" | cut -f1)"
 fi
 
-# ── 3. MobileFaceNet — Dev placeholder ────────────────────────────────────────
-MOBILEFACENET_OUT="$MODELS_DIR/mobilefacenet_india_int8.tflite"
+# ── 3. MobileFaceNet India INT8 ───────────────────────────────
+MOBILEFACENET_DEST="$MODELS_DIR/mobilefacenet_india_int8.tflite"
 
-if [ -f "$MOBILEFACENET_OUT" ]; then
-  echo "✅ mobilefacenet_india_int8.tflite already exists — skipping"
+if [ -f "$MOBILEFACENET_DEST" ] && [ "$(wc -c < "$MOBILEFACENET_DEST")" -gt 100000 ]; then
+  echo "✅ MobileFaceNet already present ($(du -sh "$MOBILEFACENET_DEST" | cut -f1))"
 else
   echo ""
-  echo "⚠️  mobilefacenet_india_int8.tflite not found."
-  echo "   For DEVELOPMENT: downloading base MobileFaceNet (no Indian demographic tuning)"
-  echo "   For PRODUCTION:  run the training pipeline — see docs/MODEL_SETUP.md"
-  echo ""
+  echo "── MobileFaceNet India Model ─────────────────────────────"
+  echo "Attempting to download generic MobileFaceNet (fallback for demo)..."
 
-  # Base MobileFaceNet from open-source repo (dev only)
-  BASE_URL="https://github.com/tensorflow/tensorflow/raw/master/tensorflow/lite/examples/android/app/src/main/assets/facenet.tflite"
-  curl -L --progress-bar "$BASE_URL" -o "$MOBILEFACENET_OUT" 2>/dev/null || {
-    # Fallback: create a placeholder so builds don't fail
-    echo "⚠️  Could not download base model. Creating placeholder."
-    echo "PLACEHOLDER - replace with real mobilefacenet_india_int8.tflite" > "$MOBILEFACENET_OUT"
-  }
-  echo "✅ mobilefacenet_india_int8.tflite in place"
+  # Generic MobileFaceNet from TF Hub (not India-specific but functional for demo)
+  GENERIC_URL="https://storage.googleapis.com/download.tensorflow.org/models/tflite/task_library/face_recognition/android/mobile_face_net.tflite"
+  curl -sL "$GENERIC_URL" -o "$MOBILEFACENET_DEST" --progress-bar 2>/dev/null || \
+  wget -q --show-progress "$GENERIC_URL" -O "$MOBILEFACENET_DEST" 2>/dev/null || true
+
+  if [ -f "$MOBILEFACENET_DEST" ] && [ "$(wc -c < "$MOBILEFACENET_DEST")" -gt 100000 ]; then
+    echo "✅ MobileFaceNet (generic): $(du -sh "$MOBILEFACENET_DEST" | cut -f1)"
+    echo "⚠️  Replace with India-tuned model for >95% accuracy on Indian demographics."
+    echo "    See training/TRAINING_GUIDE.md"
+  else
+    echo "FACESHIELD_MODEL_PLACEHOLDER_v2" > "$MOBILEFACENET_DEST"
+    echo "⚠️  Placeholder created — run training pipeline for real model."
+  fi
 fi
 
-# ── Summary ───────────────────────────────────────────────────────────────────
 echo ""
-echo "Model sizes:"
-du -sh "$MODELS_DIR"/* 2>/dev/null || echo "  (no files)"
-echo ""
-
-TOTAL=$(du -sh "$MODELS_DIR" | cut -f1)
-echo "Total model footprint: $TOTAL"
-echo ""
-echo "✅ Done. Start Metro: npm start"
+echo "=== Model inventory ==="
+ls -lh "$MODELS_DIR"
+echo "Total: $(du -sh "$MODELS_DIR" | cut -f1)"

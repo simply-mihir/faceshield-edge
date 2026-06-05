@@ -20,6 +20,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {Camera, useCameraDevice, useFrameProcessor} from 'react-native-vision-camera';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RouteProp} from '@react-navigation/native';
+// Note: @react-navigation/native-stack is listed in package.json dependencies
 import {useFaceShield} from '../hooks/useFaceShield';
 import {AttendanceRecord, AuthStatus, ChallengeStatus, LivenessChallenge} from '../types';
 import {RootStackParamList} from '../../App';
