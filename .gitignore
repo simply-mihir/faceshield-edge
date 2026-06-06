@@ -68,3 +68,4 @@ coverage/
 
 # Metro
 .metro-health-check*
+ios/Pods/
