@@ -4,4 +4,10 @@
    <FileRef
       location = "self:">
    </FileRef>
+   <FileRef
+      location = "group:faceshieldedge.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Pods/Pods.xcodeproj">
+   </FileRef>
 </Workspace>

@@ -1,0 +1,6 @@
+module Pods_faceshieldedge {
+  umbrella header "Pods-faceshieldedge-umbrella.h"
+
+  export *
+  module * { export * }
+}

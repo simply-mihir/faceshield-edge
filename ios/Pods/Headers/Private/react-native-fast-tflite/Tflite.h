@@ -1,0 +1,1 @@
+../../../../../node_modules/react-native-fast-tflite/ios/Tflite.h
